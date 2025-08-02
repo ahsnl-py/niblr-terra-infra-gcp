@@ -1,61 +1,130 @@
-# Terraform-Docker-Airflow-GCP
-Terraform Files to Create a GCP VM Install Docker Docker-Compose and Run Airflow
+# Terraform Docker Airflow GCP
 
-## Walkthrough Video for Setup
-[![Setup Walkthrough](https://img.youtube.com/vi/HgCRclidDOQ/0.jpg)](https://www.youtube.com/watch?v=HgCRclidDOQ)
+Terraform infrastructure to deploy Docker-based services on Google Cloud Platform with automated Cloud Workflows for service management.
 
+## Overview
 
-## Create a Project in GCP
-![til](./images/CreateProject.gif)
+This project deploys:
+- **Scrapaz Service**: Web scraping service running on port 8001
+- **Niblr Airflow Service**: Apache Airflow for workflow orchestration
+- **Cloud Workflows**: Automated start/stop scheduling (Saturday 7 AM - Sunday 12 AM)
 
-## Create a Service Account and Download the Key
-Create a Service Account and give it Compute Engine Admin Permissions<br>
-Generate and download a key for the Service Account</br>
+## Prerequisites
 
-Note: The variables.tf files are looking for a key titled **terra-airflow.json** in a .google directory in the root of the projects file structure.
+- Google Cloud Platform account
+- Google Cloud CLI installed and configured
+- Terraform installed
+- SSH key pair for VM access
 
-![til](./images/ServiceAccount.gif)
+## Quick Start
 
-Create a ./google directory and add your .json key there<br>
-Name it terra-airflow or update the varaibles.tf file variable</br>
-![til](./images/AddServiceAccount.gif)
+### 1. Setup Google Cloud
 
-## Update the Variables.tf File 
-Update the variables in variables.tf to match your project.<br><br>
-A good way to do this is to look at the Dashboard for the project name<br><br>
-Go to Compute Engine and click the Create Instance button.<br><br>
-The default shown for Region and Zone are most likely what you want to use.</br><br>
-![til](./images/SetVariables.gif)
+1. Create a GCP project
+2. Enable required APIs:
+   ```bash
+   gcloud services enable compute.googleapis.com
+   gcloud services enable workflows.googleapis.com
+   gcloud services enable cloudscheduler.googleapis.com
+   ```
 
+### 2. Create Service Account
 
-## Generate an SSH Key Pair
-<br>
+1. Create a service account with these roles:
+   - Compute Engine Admin
+   - Workflows Admin
+   - Cloud Scheduler Admin
+   - Service Account User
+
+2. Download the JSON key and save it as `.google/credentials/sa-cloud-workflow.json`
+
+### 3. Generate SSH Key
 
 ```bash
-ssh-keygen -t rsa -f ~/.ssh/KEY_FILENAME -C USERNAME
+ssh-keygen -t rsa -f ~/.ssh/gcp_key -C your-email@example.com
 ```
 
-The files as is will be looking for a private and public key pair with the name "GCP" in your users .ssh directoy.<br>
+### 4. Deploy Infrastructure
 
-
-## Create Service Account for Airflow
-You will now need to generate a Service Account with permissions to upload to a GCP Bucket.
-![til](./images/gsc_servAcct.png)
-
-Create a key file for the service acount and place it at **.google/credentials/google_credentials.json**
-![til](./images/google_credentials.png)
-
-## Deploy to GCP
-From either the<br>
-file_user-script<br>
-or
-inline_user-script<br>
-directories run<br>
 ```bash
-terraform plan
-```
-to check for errors<br>
-```bash
+# Deploy scrapaz service
+cd scrapaz-service
+terraform init
+terraform apply
+
+# Deploy niblr-airflow service
+cd ../niblr-airflow-service
+terraform init
+terraform apply
+
+# Deploy Cloud Workflows
+cd ../cloud-workflows
+terraform init
 terraform apply
 ```
-to deploly to GCP
+
+## Configuration
+
+### Variables
+
+Update these variables in each service's `variables.tf`:
+
+- `project`: Your GCP project ID
+- `region`: GCP region (default: europe-west3)
+- `zone`: GCP zone (default: europe-west3-a)
+- `user`: VM username
+- `ssh_key_file`: Path to your SSH public key
+
+### Cloud Workflows Schedule
+
+- **Start Services**: Saturday 7:00 AM
+- **Stop Services**: Saturday 11:59 PM (Sunday 12:00 AM)
+
+To enable scheduling:
+```bash
+cd cloud-workflows
+terraform apply -var="enable_scheduled_start=true" -var="enable_scheduled_stop=true"
+```
+
+## Manual Workflow Execution
+
+```bash
+# Start services
+gcloud workflows execute start-services-workflow --location=europe-west3
+
+# Stop services
+gcloud workflows execute stop-services-workflow --location=europe-west3
+
+# Check service status
+gcloud workflows execute check-services-status-workflow --location=europe-west3
+```
+
+## Access Services
+
+After deployment, you'll get the public IP addresses in the Terraform output:
+
+- **Scrapaz Service**: `http://<IP>:8001`
+- **Niblr Airflow**: `http://<IP>:8080`
+
+## Project Structure
+
+```
+├── scrapaz-service/          # Web scraping service
+├── niblr-airflow-service/    # Apache Airflow service
+├── cloud-workflows/          # Automated service management
+├── .google/                  # Service account credentials
+└── README.md
+```
+
+## Cleanup
+
+To destroy all resources:
+```bash
+cd scrapaz-service && terraform destroy
+cd ../niblr-airflow-service && terraform destroy
+cd ../cloud-workflows && terraform destroy
+```
+
+## Support
+
+For issues or questions, please check the individual service directories for specific documentation.
