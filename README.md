@@ -1,4 +1,4 @@
-# Terraform Docker Airflow GCP
+# Terraform Infa for GCP
 
 Terraform infrastructure to deploy Docker-based services on Google Cloud Platform with automated Cloud Workflows for service management.
 
