@@ -36,6 +36,6 @@ variable "start_schedule" {
 }
 
 variable "stop_schedule" {
-  description = "Cron schedule for stopping services (default: Sunday at 7 PM)"
-  default     = "0 19 * * 0"
+  description = "Cron schedule for stopping services (default: Saturday at 10 PM)"
+  default     = "0 22 * * 6"
 }

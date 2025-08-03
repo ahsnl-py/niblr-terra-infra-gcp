@@ -17,12 +17,3 @@ output "check_status_workflow_name" {
   description = "Name of the workflow to check service status"
   value       = google_workflows_workflow.check_services_status.name
 }
-
-output "workflow_execution_commands" {
-  description = "Commands to execute workflows manually"
-  value = {
-    start_services = "gcloud workflows execute ${google_workflows_workflow.start_services.name} --location=${var.region}"
-    stop_services  = "gcloud workflows execute ${google_workflows_workflow.stop_services.name} --location=${var.region}"
-    check_status   = "gcloud workflows execute ${google_workflows_workflow.check_services_status.name} --location=${var.region}"
-  }
-}

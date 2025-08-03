@@ -7,7 +7,8 @@ This Terraform configuration creates Google Cloud Workflows to manage your scrap
 - **Start Services Workflow**: Starts both VM instances
 - **Stop Services Workflow**: Stops both VM instances  
 - **Check Status Workflow**: Monitors the status of both VMs
-- **Scheduled Execution**: Optional Cloud Scheduler jobs for weekend automation (Saturday 7 AM - Sunday 7 PM)
+- **Update Scrapaz IP Workflow**: Updates the scrapaz service IP in the airflow service metadata
+- **Scheduled Execution**: Optional Cloud Scheduler jobs for weekend automation
 - **Service Account**: Dedicated service account with minimal required permissions
 
 ## Prerequisites
@@ -48,6 +49,9 @@ gcloud workflows execute stop-services-workflow --location=europe-west3
 
 # Check status
 gcloud workflows execute check-services-status-workflow --location=europe-west3
+
+# Update scrapaz IP
+gcloud workflows execute update-scrapaz-ip-workflow --location=europe-west3
 ```
 
 ### Enable Weekend Scheduling
@@ -71,7 +75,8 @@ To enable automatic weekend start/stop scheduling (Saturday 7 AM - Sunday 7 PM),
 
 **Schedule Details:**
 - **Start**: Every Saturday at 7:00 AM
-- **Stop**: Every Sunday at 7:00 PM
+- **Stop**: Every Saturday at 10:00 PM
+- **Update IP**: Every Saturday at 8:00 AM
 - **Time Zone**: Europe/Berlin
 
 ## Workflow Details
@@ -88,7 +93,7 @@ To enable automatic weekend start/stop scheduling (Saturday 7 AM - Sunday 7 PM),
 - Stops `niblr-airflow-ubuntu` instance
 - Waits 30 seconds for graceful shutdown
 - Returns execution status
-- **Scheduled**: Sunday at 7 PM (when enabled)
+- **Scheduled**: Saturday at 10 PM (when enabled)
 
 ### Check Status Workflow
 - Retrieves current status of both VM instances
@@ -96,6 +101,13 @@ To enable automatic weekend start/stop scheduling (Saturday 7 AM - Sunday 7 PM),
   - Instance names
   - Current status (RUNNING, STOPPED, etc.)
   - Zone information
+
+### Update Scrapaz IP Workflow
+- Retrieves the current IP address of `scrapaz-service-vm`
+- Updates the `SCRAPAZ_SERVICE_IP` metadata item on `niblr-airflow-ubuntu`
+- Ensures the airflow service always has the correct scrapaz service IP
+- Returns the updated IP address and execution status
+- **Scheduled**: Saturday at 8 AM (when enabled)
 
 ## Security
 
@@ -112,8 +124,9 @@ You can monitor workflow executions in the Google Cloud Console:
 
 ## Cost Optimization
 
-- Use weekend scheduling to automatically start services only when needed (Saturday 7 AM - Sunday 7 PM)
+- Use weekend scheduling to automatically start services only when needed (Saturday 7 AM - Saturday 10 PM)
 - Services will be stopped during weekdays to save costs
+- IP updates are scheduled to ensure services can communicate properly
 - Monitor workflow execution costs in Cloud Console
 - Consider using Cloud Functions for simpler use cases if cost is a concern
 
